@@ -67,8 +67,8 @@ export default function Home({ products }: HomeProps) {
           </nav>
           <div className="call">
             <div className="left">
-              <h1 className="color-azul text-gd">Novas Coleções</h1>
-              <p className="color-azul text-pq">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
+              <h1 className="color-azul text-gd">Novidades em Alta</h1>
+              <p className="color-azul text-pq">Confira os produtos que estão bombando</p>
               <button>Compre Agora</button>
             </div>
             <div className="right">
