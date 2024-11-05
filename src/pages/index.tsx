@@ -37,7 +37,7 @@ export default function Home({ products }: HomeProps) {
   return (
     <>
       <Head>
-        <title>Toy Kids Brasil/title>
+        <title>Toy Kids Brasil</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
       </Head>
