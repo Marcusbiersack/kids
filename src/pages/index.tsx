@@ -9,7 +9,7 @@ import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
 import Link from "next/link";
 import { useState } from "react";
-import vestImage from '../assets/vest.webp'; // Mantenha a importação da imagem
+import vestImage from '../assets/melhor-loja-de-brinquedos.jpg.webp'; // Mantenha a importação da imagem
 
 interface HomeProps {
   products: {
