@@ -5,11 +5,10 @@ export const ProductContaider = styled('main', {
     gridTemplateColumns: '1fr 1fr',
     alignItems: 'stretch',
     gap: '4rem',
-
     maxWidth: 1180,
     margin: '0 auto',
+});
 
-})
 export const ImageContaider = styled('div', {
     width: '100%',
     maxWidth: 576,
@@ -17,7 +16,6 @@ export const ImageContaider = styled('div', {
     background: 'linear-gradient(180deg, #1ea483 0%, #7465d4 100%)',
     borderRadius: 8,
     padding: '0.25rem',
-
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -25,21 +23,21 @@ export const ImageContaider = styled('div', {
     img: {
         objectFit: 'cover'
     }
+});
 
-})
 export const ProductDetails = styled('div', {
     display: 'flex',
     flexDirection: "column",
 
     h1: {
-        fontSize: '$2xl',
+        fontSize: '\$2xl',
         color: '$gray300',
     },
 
     span: {
         marginTop: '1rem',
         display: "block",
-        fontSize: '$2xl',
+        fontSize: '\$2xl',
         color: '$green300',
     },
 
@@ -70,4 +68,63 @@ export const ProductDetails = styled('div', {
             backgroundColor: '$green300',
         }
     }
-})
+});
+
+// Estilos para a seção de Produtos Sugeridos
+export const SuggestedProducts = styled('section', {
+    marginTop: '40px',
+    textAlign: 'center',
+
+    h2: {
+        fontSize: '\$2xl',
+        marginBottom: '20px',
+        color: '$gray300',
+    },
+
+    '.product-grid': {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)', // 3 colunas para maior responsividade
+        gap: '20px',
+        marginTop: '20px',
+    },
+
+    '.product-card': {
+        background: 'linear-gradient(180deg, #1ea483 0%, #7465d4 100%)',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '10px',
+        transition: 'transform 0.2s ease',
+        
+        '&:hover': {
+            transform: 'scale(1.05)',
+        },
+
+        h3: {
+            fontSize: '1rem',
+            marginTop: '10px',
+            color: '#fff',
+        },
+
+        span: {
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: '#00E676',
+        },
+    },
+
+    '@media (max-width: 768px)': {
+        '.product-grid': {
+            gridTemplateColumns: 'repeat(2, 1fr)', // 2 colunas em telas menores que 768px
+        },
+    },
+
+    '@media (max-width: 480px)': {
+        '.product-grid': {
+            gridTemplateColumns: '1fr', // 1 coluna em telas menores que 480px
+        },
+    },
+});

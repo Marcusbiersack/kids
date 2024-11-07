@@ -19,14 +19,14 @@ html,body{
 }
 
 .bg{
-    background: url('../assets/bg-2.png') no-repeat;
+    background: url('../assets/pexels-magda-ehlers-pexels-15273761.jpg') no-repeat;
     background-size: cover;
     width: 100%;
     height: auto;
 }
 
 .bg2{
-    background: url('../assets/bg-4.png') no-repeat;
+    background: url('../assets/pexels-magda-ehlers-pexels-15273761.jpg') no-repeat;
     background-size: cover;
     width: 100%;
     height: auto;
@@ -59,15 +59,15 @@ html,body{
 }
 
 .color-azul{
-    color: #1B3B56;
+    color: #dadada;
 }
 
 .color-azul-1{
-    color: #5271FF;
+    color: #ffffff;
 }
 
 .color-cinza-2{
-    color: #545454;
+    color: #ffffff;
 }
 
 .call{
@@ -106,15 +106,15 @@ html,body{
 }
 
 img{
-    width: 70%;
+    width: 100%;
     object-fit: contain;
 }
 
 button{
     padding: 10px 20px;
-    background: #1B3B56;
+    background: #625ac7;
     color: #fff;
-    font-size: 14px;
+    font-size: 25px;
     border: none;
     cursor: pointer;
     transition: 0.8s ease;
@@ -123,8 +123,8 @@ button{
 }
 
 button:hover{
-    border: 1px solid #8B634A;
-    background: #8B634A;
+    border: 1px solid #021c74;
+    background: #070bc5;
     color: #fff;
     transform: scale(1.10);
 }
@@ -147,8 +147,8 @@ button:hover{
     justify-content: flex-start;
     flex-direction: column;
     margin-top: 40px;
-    text-shadow: 0 0 10px #545454;
-    color: #2B2B2B;
+    text-shadow: 0 0 10px #f0f0f0;
+    color: #ada6eb;
 }
 .line{
     width: 80%;
@@ -166,7 +166,7 @@ button:hover{
     text-align: center;
     width: 200px;
     font-size: 18px;
-    background: #8B634A;
+    background: #0e01b8;
     color: #fff;
 }
 
@@ -200,16 +200,16 @@ button:hover{
     align-items: center;
     justify-content: space-between;
     padding: 0 2%;
-    background:#C3BCB7;
+    background:#f1f1f1;
 }
 
 .logo{
-    background: url('../assets/logo-roupa.png') no-repeat;
+    background: url('../assets/preview.jpg') no-repeat;
     background-size: contain;
     width: 130px;
     height: 80px;
     position: relative;
-    top: 20px;
+    top: 0px;
     z-index: 9;
 }
 
@@ -218,7 +218,7 @@ button:hover{
     bottom: 2px;
     right: 10px;
     padding: 5px 10px;
-    background: #8B634A;
+    background: #4a508b;
 }
 
 body::-webkit-scrollbar {
@@ -256,8 +256,8 @@ body::-webkit-scrollbar-thumb {
 }
 
 .desktop-menu ul li a:hover{
-    color:#8B634A;
-    text-shadow: 0 0 5px #8B634A;
+    color:#cccccc;
+    text-shadow: 0 0 5px #54788d;
     font-weight: 400;
     text-decoration: underline;
 }

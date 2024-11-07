@@ -1,15 +1,12 @@
-// pages/index.tsx
 import { GetStaticProps } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import { stripe } from "../lib/stripe";
 import { Stripe } from "stripe";
-import { HomeContainer, Product } from "../styles/pages/home";
-import { useKeenSlider } from 'keen-slider/react';
-import 'keen-slider/keen-slider.min.css';
-import Link from "next/link";
+import { HomeContainer, Product, ProductGrid } from "../styles/pages/home"; // Certifique-se de que está importando ProductGrid
+import Link from "next/link"; // Importação do Link do Next.js
 import { useState } from "react";
-import vestImage from '../assets/melhor-loja-de-brinquedos.jpg.webp'; // Mantenha a importação da imagem
+import vestImage from '../assets/pexels-ryutaro-6249454.jpg'; // Imagem de capa
 
 interface HomeProps {
   products: {
@@ -21,13 +18,6 @@ interface HomeProps {
 }
 
 export default function Home({ products }: HomeProps) {
-  const [sliderRef] = useKeenSlider({
-    slides: {
-      perView: 3,
-      spacing: 48,
-    }
-  });
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -37,9 +27,8 @@ export default function Home({ products }: HomeProps) {
   return (
     <>
       <Head>
-        <title>Toy Kids Brasil</title>
+        <title>Loja Canti Brasil</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
       </Head>
 
       {/* Header */}
@@ -49,27 +38,27 @@ export default function Home({ products }: HomeProps) {
             <div className="logo"></div>
             <div className="desktop-menu">
               <ul>
-                <li><a href="#Home">Home</a></li>
-                <li><a href="#About">Novidades</a></li>
-                <li><a href="#Service">Destaque</a></li>
-                <li><a href="#Contact">Contato</a></li>
+                <li><Link href="#Home">Home</Link></li>
+                <li><Link href="/product/prod_RAcmPXcJLFvG4U">Brinquedos</Link></li>
+                <li><Link href="/product/prod_RAd7LAfMf1f68o">Eletrônicos</Link></li>
+                <li><Link href="/product/prod_RAcuKq521rxlRy">Airsoft & Caça</Link></li>
               </ul>
             </div>
             <div className="mobile-menu" onClick={toggleMenu}>
               <i className="fa fa-bars"></i>
               <ul id="myLinks" style={{ display: menuOpen ? 'block' : 'none' }}>
-                <li><a href="#Home">Home</a></li>
-                <li><a href="#About">Novidades</a></li>
-                <li><a href="#Service">Destaque</a></li>
-                <li><a href="#Contact">Contato</a></li>
+                <li><Link href="#Home">Home</Link></li>
+                <li><Link href="/product/prod_RAcmPXcJLFvG4U">Brinquedos</Link></li>
+                <li><Link href="/product/prod_RAd7LAfMf1f68o">Eletrônicos</Link></li>
+                <li><Link href="/product/prod_RAcuKq521rxlRy">Airsoft & Caça</Link></li>
               </ul>
             </div>
           </nav>
           <div className="call">
             <div className="left">
-              <h1 className="color-azul text-gd">Novidades em Alta</h1>
-              <p className="color-azul text-pq">Confira os produtos que estão bombando</p>
-              <button>Compre Agora</button>
+              <h1 className="color-azul text-gd">Lojas Canti Com as Melhores Novidades</h1>
+              <p className="color-azul text-pq">Confira os produtos que estão bombando, temos as melhores opções de presente.</p>
+              <button>Confira Ofertas</button>
             </div>
             <div className="right">
               <div className="imagem">
@@ -81,20 +70,27 @@ export default function Home({ products }: HomeProps) {
         <button id="back-to-top" onClick={() => window.scrollTo(0, 0)}>^</button>
       </header>
 
-      {/* Products Slider */}
-      <HomeContainer ref={sliderRef} className="keen-slider">
-        {products.map(product => (
+      {/* Product Grid */}
+      <ProductGrid>
+        {products.map((product) => (
           <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
-            <Product className="keen-slider__slide">
-              <Image src={product.imageUrl} alt={product.name} width={520} height={480} />
+            <Product>
+              {/* Verifique se os dados do produto estão presentes */}
+              <Image
+                src={product.imageUrl || '/default-image.jpg'}
+                alt={product.name || 'Produto sem nome'}
+                width={400}
+                height={600}
+                style={{ objectFit: 'cover' }}
+              />
               <footer>
-                <strong>{product.name}</strong>
+                <strong>{product.name || 'Produto sem nome'}</strong>
                 <span>{product.price}</span>
               </footer>
             </Product>
           </Link>
         ))}
-      </HomeContainer>
+      </ProductGrid>
 
       {/* About Section */}
       <section className="max-width bg2" id="About">
@@ -103,30 +99,37 @@ export default function Home({ products }: HomeProps) {
     </>
   );
 }
-
 export const getStaticProps: GetStaticProps = async () => {
-  const response = await stripe.products.list({
-    expand: ['data.default_price']
-  });
+  try {
+    const response = await stripe.products.list({
+      expand: ['data.default_price'],
+    });
 
-  const products = response.data.map(product => {
-    const price = product.default_price as Stripe.Price;
+    const products = response.data.map((product) => {
+      const price = product.default_price as Stripe.Price;
+
+      // Retornar um objeto com os dados do produto
+      return {
+        id: product.id,
+        name: product.name,
+        imageUrl: product.images[0] || '/default-image.jpg', // Garantir que sempre tenha uma imagem
+        price: new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(price.unit_amount / 100),
+      };
+    });
 
     return {
-      id: product.id,
-      name: product.name,
-      imageUrl: product.images[0],
-      price: new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price.unit_amount / 100),
+      props: {
+        products,
+      },
+      revalidate: 60 * 60 * 20, // 20 horas para revalidar a página
     };
-  });
-
-  return {
-    props: {
-      products,
-    },
-    revalidate: 60 * 60 * 20 // 2 horas   
-  };
-}
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return {
+      notFound: true, // Se algo der errado, retorna página 404
+    };
+  }
+};
