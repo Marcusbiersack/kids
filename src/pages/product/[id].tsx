@@ -26,36 +26,58 @@ interface ProductProps {
 
 export default function Product({ product, suggestions }: ProductProps) {
   const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] = useState(false);
+  const [pixQrCode, setPixQrCode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fallback durante o carregamento
-  if (!product || !suggestions || suggestions.length === 0) {
-    return <p>Carregando...</p>;
-  }
+  // Função para criar a sessão de checkout com PIX ou Cartão
+  const handleCheckout = async (paymentMethod: 'card' | 'pix') => {
+    setIsCreatingCheckoutSession(true);
+    setError(null);
 
-  async function handleBuyProduct() {
     try {
-      setIsCreatingCheckoutSession(true);
-  
-      // Garantir que você está passando o priceId correto
       const response = await fetch('/api/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          priceId: product.defaultPriceId, // Passando o priceId, não o valor do preço
+          priceId: product.defaultPriceId,
+          paymentMethod, // Envia o tipo de pagamento escolhido
         }),
       });
-  
+
       const session = await response.json();
+
       if (session.url) {
         window.location.href = session.url; // Redireciona para o Stripe Checkout
       } else {
         throw new Error('Erro ao criar sessão de checkout');
       }
-  
     } catch (error) {
-      console.error('Erro ao criar a sessão de checkout:', error);
+      console.error('Erro ao criar sessão de checkout:', error);
+      setError('Erro ao criar a sessão de checkout');
       setIsCreatingCheckoutSession(false);
     }
-  }
+  };
+
+  const handleGeneratePix = async () => {
+    setError(null);
+    try {
+      const response = await fetch('/api/gerar-pix', {
+        method: 'POST',
+        body: JSON.stringify({
+          priceId: product.defaultPriceId, // Passa o priceId para a API
+        }),
+      });
+  
+      const data = await response.json();
+      if (data.qrCode) {
+        setPixQrCode(data.qrCode); // Recebe o QR Code gerado
+      } else {
+        setError('Não foi possível gerar o QR Code');
+      }
+    } catch (error) {
+      console.error('Erro ao gerar o QR Code do PIX:', error);
+      setError('Erro ao gerar o QR Code do PIX');
+    }
+  };
 
   return (
     <>
@@ -76,9 +98,25 @@ export default function Product({ product, suggestions }: ProductProps) {
           <h1>{product.name}</h1>
           <span>{product.price}</span> {/* Exibindo o preço formatado */}
           <p>{product.description}</p>
-          <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>
-            Comprar agora
+
+          {/* Botão para pagamento via Stripe (cartão) */}
+          <button disabled={isCreatingCheckoutSession} onClick={() => handleCheckout('card')}>
+            Comprar agora (Cartão)
           </button>
+
+          {/* Botão para gerar QR Code PIX */}
+          <button disabled={isCreatingCheckoutSession} onClick={handleGeneratePix}>
+            Pagar com PIX
+          </button>
+
+          {pixQrCode && (
+  <div>
+    <h3>Escaneie o QR Code para pagamento via PIX:</h3>
+    <img src={`data:image/png;base64,${pixQrCode}`} alt="QR Code PIX" />
+  </div>
+)}
+
+          {error && <p>{error}</p>}
         </ProductDetails>
       </ProductContaider>
 
@@ -96,7 +134,7 @@ export default function Product({ product, suggestions }: ProductProps) {
               />
               <div>
                 <strong>{suggestedProduct.name}</strong>
-                <div>{suggestedProduct.price}</div> {/* Exibindo o preço formatado */}
+                <div>{suggestedProduct.price}</div>
               </div>
             </div>
           </Link>
@@ -140,7 +178,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       return { notFound: true };
     }
 
-    // Formatação do preço
+    // Formatação do preço para exibição (convertendo de centavos para reais)
     const formattedPrice = new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -162,7 +200,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         price: new Intl.NumberFormat('pt-BR', {
           style: 'currency',
           currency: 'BRL',
-        }).format(price.unit_amount / 100), // Formatação para os produtos sugeridos
+        }).format(price.unit_amount / 100), // Formatar preço sugerido
       };
     });
 
@@ -172,18 +210,16 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           id: product.id,
           name: product.name,
           imageUrl: product.images[0] || '/default-image.jpg',
-          price: formattedPrice,
-          description: product.description || 'Sem descrição',
-          defaultPriceId: price.id, // Passando o priceId correto para o checkout
+          price: formattedPrice, // Preço formatado como moeda
+          description: product.description || 'Descrição não disponível',
+          defaultPriceId: price.id,
         },
         suggestions,
       },
-      revalidate: 60 * 60 * 24, // 24 horas
+      revalidate: 60 * 60, // Revalidar a cada hora
     };
   } catch (error) {
     console.error('Erro ao recuperar o produto:', error);
-    return {
-      notFound: true,
-    };
+    return { notFound: true };
   }
 };

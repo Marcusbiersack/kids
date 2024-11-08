@@ -16,7 +16,11 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "baseUrl": "src",  // Define a pasta src como a base para as importações
+    "paths": {
+      "@models/*": ["models/*"]  // Alias para a pasta models
+    }
   },
   "include": [
     "next-env.d.ts",
