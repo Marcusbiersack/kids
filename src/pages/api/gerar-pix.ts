@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Dados para gerar o QR Code Pix
-      const chavePix = "procvlh@gmail.com"; // Chave do recebedor (exemplo com e-mail)
+      const chavePix = "marcosraline08@gmail.com"; // Chave do recebedor (exemplo com e-mail)
       const txid = Date.now().toString(); // TXID único para a transação
 
       // Preço do produto já em reais (em vez de centavos)
@@ -37,10 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const brCode = new BrCode(
         chavePix,
         amountInReais.toFixed(2), // Passa o valor em reais corretamente formatado
-        "PEDRO LUCAS CARVALHO OLIV", // Nome do recebedor
+        "MARCUS VINICIUS TAVA", // Nome do recebedor
         txid, // ID da transação
         "email", // Tipo de chave Pix (email, celular, CPF/CNPJ)
-        "AÇAILÂNDIA" // Cidade do recebedor
+        "CARUARU" // Cidade do recebedor
       );
 
       // Gerar o payload para o QR Code
