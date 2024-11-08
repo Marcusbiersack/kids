@@ -1,5 +1,3 @@
-// pages/product/[id].tsx
-
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { stripe } from '../../lib/stripe';
 import { Stripe } from 'stripe';
@@ -14,9 +12,9 @@ interface ProductProps {
     id: string;
     name: string;
     imageUrl: string;
-    price: string;
+    price: string; // Preço já formatado para exibição
     description: string;
-    defaultPriceId: string;
+    defaultPriceId: string; // Passando o priceId para o checkout
   };
   suggestions: {
     id: string;
@@ -30,29 +28,32 @@ export default function Product({ product, suggestions }: ProductProps) {
   const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] = useState(false);
 
   // Fallback durante o carregamento
-  if (!product || !suggestions) {
+  if (!product || !suggestions || suggestions.length === 0) {
     return <p>Carregando...</p>;
   }
 
   async function handleBuyProduct() {
     try {
       setIsCreatingCheckoutSession(true);
+  
+      // Garantir que você está passando o priceId correto
       const response = await fetch('/api/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          priceId: product.defaultPriceId,
+          priceId: product.defaultPriceId, // Passando o priceId, não o valor do preço
         }),
       });
-
-      const { checkoutUrl } = await response.json();
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+  
+      const session = await response.json();
+      if (session.url) {
+        window.location.href = session.url; // Redireciona para o Stripe Checkout
       } else {
-        alert('Erro ao criar a sessão de checkout.');
+        throw new Error('Erro ao criar sessão de checkout');
       }
-    } catch (err) {
+  
+    } catch (error) {
+      console.error('Erro ao criar a sessão de checkout:', error);
       setIsCreatingCheckoutSession(false);
-      alert('Falha ao redirecionar ao checkout!');
     }
   }
 
@@ -63,12 +64,17 @@ export default function Product({ product, suggestions }: ProductProps) {
       </Head>
       <ProductContaider>
         <ImageContaider>
-          <Image src={product.imageUrl || '/default-image.jpg'} alt={product.name} width={520} height={480} />
+          <Image
+            src={product.imageUrl || '/default-image.jpg'}
+            alt={product.name}
+            width={520}
+            height={480}
+          />
         </ImageContaider>
 
         <ProductDetails>
           <h1>{product.name}</h1>
-          <span>{product.price}</span>
+          <span>{product.price}</span> {/* Exibindo o preço formatado */}
           <p>{product.description}</p>
           <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>
             Comprar agora
@@ -90,7 +96,7 @@ export default function Product({ product, suggestions }: ProductProps) {
               />
               <div>
                 <strong>{suggestedProduct.name}</strong>
-                <div>{suggestedProduct.price}</div>
+                <div>{suggestedProduct.price}</div> {/* Exibindo o preço formatado */}
               </div>
             </div>
           </Link>
@@ -99,72 +105,85 @@ export default function Product({ product, suggestions }: ProductProps) {
     </>
   );
 }
+
 export const getStaticPaths: GetStaticPaths = async () => {
-    const products = await stripe.products.list({ limit: 5 }); // Limita para evitar sobrecarga
-  
-    const paths = products.data.map((product) => ({
-      params: { id: product.id },
-    }));
-  
+  const products = await stripe.products.list({ limit: 5 });
+
+  const paths = products.data.map((product) => ({
+    params: { id: product.id },
+  }));
+
+  return {
+    paths,
+    fallback: 'blocking',
+  };
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const productId = params?.id as string;
+
+  if (!productId) {
     return {
-      paths,
-      fallback: 'blocking', // 'blocking' para garantir que a página será gerada durante a requisição
+      notFound: true,
     };
-  };
-  export const getStaticProps: GetStaticProps = async ({ params }) => {
-    const productId = params?.id;
-  
-    try {
-      // Recuperando o produto principal
-      const product = await stripe.products.retrieve(productId as string, {
-        expand: ['default_price'],
-      });
-  
-      const price = product.default_price as Stripe.Price;
-  
-      // Formatação do preço
-      const formattedPrice = new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price.unit_amount / 100);
-  
-      // Recuperando produtos relacionados
-      const relatedProducts = await stripe.products.list({
-        limit: 5,
-        expand: ['data.default_price'],
-      });
-  
-      const suggestions = relatedProducts.data.map((suggestedProduct) => {
-        const price = suggestedProduct.default_price as Stripe.Price;
-        return {
-          id: suggestedProduct.id,
-          name: suggestedProduct.name,
-          imageUrl: suggestedProduct.images[0] || '/default-image.jpg',
-          price: new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-          }).format(price.unit_amount / 100),
-        };
-      });
-  
-      return {
-        props: {
-          product: {
-            id: product.id,
-            name: product.name,
-            imageUrl: product.images[0] || '/default-image.jpg',
-            price: formattedPrice,
-            description: product.description || 'Sem descrição',
-            defaultPriceId: price.id,
-          },
-          suggestions,
-        },
-        revalidate: 60 * 60 * 24, // 24 horas
-      };
-    } catch (error) {
-      console.error('Erro ao recuperar o produto:', error);
-      return {
-        notFound: true, // Página 404 caso o produto não exista
-      };
+  }
+
+  try {
+    // Recuperando o produto principal
+    const product = await stripe.products.retrieve(productId, {
+      expand: ['default_price'],
+    });
+
+    const price = product.default_price as Stripe.Price;
+    if (!price) {
+      console.error('Preço não encontrado para o produto', product.id);
+      return { notFound: true };
     }
-  };
+
+    // Formatação do preço
+    const formattedPrice = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(price.unit_amount / 100); // Convertendo de centavos para reais
+
+    // Recuperando produtos relacionados
+    const relatedProducts = await stripe.products.list({
+      limit: 5,
+      expand: ['data.default_price'],
+    });
+
+    // Formatação de preços para os produtos sugeridos
+    const suggestions = relatedProducts.data.map((suggestedProduct) => {
+      const price = suggestedProduct.default_price as Stripe.Price;
+      return {
+        id: suggestedProduct.id,
+        name: suggestedProduct.name,
+        imageUrl: suggestedProduct.images[0] || '/default-image.jpg',
+        price: new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(price.unit_amount / 100), // Formatação para os produtos sugeridos
+      };
+    });
+
+    return {
+      props: {
+        product: {
+          id: product.id,
+          name: product.name,
+          imageUrl: product.images[0] || '/default-image.jpg',
+          price: formattedPrice,
+          description: product.description || 'Sem descrição',
+          defaultPriceId: price.id, // Passando o priceId correto para o checkout
+        },
+        suggestions,
+      },
+      revalidate: 60 * 60 * 24, // 24 horas
+    };
+  } catch (error) {
+    console.error('Erro ao recuperar o produto:', error);
+    return {
+      notFound: true,
+    };
+  }
+};

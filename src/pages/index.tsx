@@ -3,10 +3,10 @@ import Head from "next/head";
 import Image from "next/image";
 import { stripe } from "../lib/stripe";
 import { Stripe } from "stripe";
-import { HomeContainer, Product, ProductGrid } from "../styles/pages/home"; // Certifique-se de que está importando ProductGrid
-import Link from "next/link"; // Importação do Link do Next.js
+import { HomeContainer, Product, ProductGrid } from "../styles/pages/home";
+import Link from "next/link";
 import { useState } from "react";
-import vestImage from '../assets/pexels-ryutaro-6249454.jpg'; // Imagem de capa
+import vestImage from '../assets/pexels-ryutaro-6249454.jpg';
 
 interface HomeProps {
   products: {
@@ -14,15 +14,26 @@ interface HomeProps {
     name: string;
     imageUrl: string;
     price: string;
-  }[]
+  }[];
+  error?: string;
 }
 
-export default function Home({ products }: HomeProps) {
+export default function Home({ products, error }: HomeProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
+
+  // Exibindo uma mensagem de erro caso ocorra algum problema no carregamento
+  if (error) {
+    return (
+      <div>
+        <h1>Erro ao carregar produtos</h1>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -75,7 +86,6 @@ export default function Home({ products }: HomeProps) {
         {products.map((product) => (
           <Link href={`/product/${product.id}`} key={product.id} prefetch={false}>
             <Product>
-              {/* Verifique se os dados do produto estão presentes */}
               <Image
                 src={product.imageUrl || '/default-image.jpg'}
                 alt={product.name || 'Produto sem nome'}
@@ -94,29 +104,56 @@ export default function Home({ products }: HomeProps) {
 
       {/* About Section */}
       <section className="max-width bg2" id="About">
-        {/* ...restante do seu código do About aqui... */}
+        {/* Adicione o conteúdo do "About" aqui */}
       </section>
     </>
   );
 }
+
 export const getStaticProps: GetStaticProps = async () => {
   try {
-    const response = await stripe.products.list({
-      expand: ['data.default_price'],
-    });
+    let allProducts: Stripe.Product[] = [];
+    let hasMore = true;
+    let startingAfter: string | null = null;
 
-    const products = response.data.map((product) => {
-      const price = product.default_price as Stripe.Price;
+    // Loop para pegar todos os produtos com paginação
+    while (hasMore) {
+      const params: { limit: number; starting_after?: string; expand: string[] } = {
+        limit: 100,  // Limite de produtos por requisição
+        expand: ['data.default_price', 'data.prices'],  // Expandindo para pegar os preços também
+      };
 
-      // Retornar um objeto com os dados do produto
+      if (startingAfter) {
+        params.starting_after = startingAfter;
+      }
+
+      const response = await stripe.products.list(params);
+
+      allProducts = [...allProducts, ...response.data];
+
+      if (response.has_more) {
+        startingAfter = response.data[response.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Mapeando os produtos e seus preços
+    const products = allProducts.map((product) => {
+      // Garantir que você tem um preço para o produto
+      const defaultPrice = product.default_price as Stripe.Price; // Acessando o preço padrão
+
       return {
         id: product.id,
         name: product.name,
-        imageUrl: product.images[0] || '/default-image.jpg', // Garantir que sempre tenha uma imagem
-        price: new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        }).format(price.unit_amount / 100),
+        imageUrl: product.images[0] || '/default-image.jpg',
+        price: defaultPrice
+          ? new Intl.NumberFormat('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            }).format(defaultPrice.unit_amount / 100) // Convertendo de centavos para reais
+          : 'Preço indisponível',
+        priceId: defaultPrice ? defaultPrice.id : null,  // Passando o priceId para a página
       };
     });
 
@@ -124,12 +161,15 @@ export const getStaticProps: GetStaticProps = async () => {
       props: {
         products,
       },
-      revalidate: 60 * 60 * 20, // 20 horas para revalidar a página
+      revalidate: 60 * 60 * 20, // Revalidação da página a cada 20 horas
     };
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Erro ao recuperar os produtos:', error);
     return {
-      notFound: true, // Se algo der errado, retorna página 404
+      props: {
+        products: [],
+        error: 'Não foi possível carregar os produtos no momento. Tente novamente mais tarde.',
+      },
     };
   }
 };
